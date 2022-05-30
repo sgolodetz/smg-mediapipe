@@ -37,7 +37,7 @@ class ObjectDetector3D:
 
         # TODO: Comment here.
         self.__objectron: mp.solutions.objectron.Objectron = mp.solutions.objectron.Objectron(
-            static_image_mode=False,
+            static_image_mode=True,
             min_detection_confidence=0.5,
             model_name="Chair",
             focal_length=(fx, fy),
@@ -73,7 +73,7 @@ class ObjectDetector3D:
                 m[0:3, 0:3] = R.from_rotvec(np.array([1, 0, 0]) * np.pi).as_matrix()
                 for landmark_3d in detected_object.landmarks_3d.landmark:
                     landmarks_3d.append(GeometryUtil.apply_rigid_transform(
-                        world_from_camera @ m, np.array([landmark_3d.x, landmark_3d.y, landmark_3d.z])
+                        world_from_camera @ m, 2.25 * np.array([landmark_3d.x, landmark_3d.y, landmark_3d.z])
                     ))
 
                 objects.append(ObjectDetector3D.Object3D(landmarks_3d))
