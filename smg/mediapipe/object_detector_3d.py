@@ -2,7 +2,9 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-from typing import List, Tuple
+from scipy.spatial.transform import Rotation as R
+from timeit import default_timer as timer
+from typing import List, Optional, Tuple
 
 from smg.utility import GeometryUtil
 
@@ -67,14 +69,22 @@ class ObjectDetector3D:
                     annotated_image, detected_object.rotation, detected_object.translation
                 )
 
+                camera_landmarks_3d: List[np.ndarray] = []
                 landmarks_3d: List[np.ndarray] = []
-                from scipy.spatial.transform import Rotation as R
+
                 m: np.ndarray = np.eye(4)
                 m[0:3, 0:3] = R.from_rotvec(np.array([1, 0, 0]) * np.pi).as_matrix()
+                world_from_camera = world_from_camera @ m
+
                 for landmark_3d in detected_object.landmarks_3d.landmark:
-                    landmarks_3d.append(GeometryUtil.apply_rigid_transform(
-                        world_from_camera @ m, 2.25 * np.array([landmark_3d.x, landmark_3d.y, landmark_3d.z])
-                    ))
+                    camera_landmark_3d: np.ndarray = np.array([landmark_3d.x, landmark_3d.y, landmark_3d.z])
+                    camera_landmarks_3d.append(camera_landmark_3d)
+
+                scale: float = ObjectDetector3D.__calculate_scale(camera_landmarks_3d[1], world_from_camera)
+                for camera_landmark_3d in camera_landmarks_3d:
+                    landmarks_3d.append(
+                        GeometryUtil.apply_rigid_transform(world_from_camera, scale * camera_landmark_3d)
+                    )
 
                 objects.append(ObjectDetector3D.Object3D(landmarks_3d))
 
@@ -83,3 +93,23 @@ class ObjectDetector3D:
 
         # TODO
         return objects
+
+    # PRIVATE STATIC METHODS
+
+    @staticmethod
+    def __calculate_scale(ground_landmark: np.ndarray, world_from_camera: np.ndarray) -> float:
+        start = timer()
+
+        alpha: float = 1.5
+        scale: float = 1.0
+        transformed_ground_landmark: np.ndarray = GeometryUtil.apply_rigid_transform(world_from_camera, ground_landmark)
+        while np.fabs(transformed_ground_landmark[1]) > 0.01:
+            err: float = transformed_ground_landmark[1]
+            print(scale, err)
+            scale -= alpha * err
+            transformed_ground_landmark = GeometryUtil.apply_rigid_transform(world_from_camera, scale * ground_landmark)
+
+        end = timer()
+        print(f"{end - start}s")
+
+        return scale
