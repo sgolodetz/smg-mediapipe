@@ -4,6 +4,8 @@ import numpy as np
 
 from typing import List, Tuple
 
+from smg.utility import GeometryUtil
+
 
 class ObjectDetector3D:
     """A 3D object detector based on MediaPipe Objectron."""
@@ -12,13 +14,25 @@ class ObjectDetector3D:
 
     class Object3D:
         """A detected 3D object."""
-        # TODO
-        pass
+
+        # CONSTRUCTOR
+
+        def __init__(self, landmarks_3d: List[np.ndarray]):
+            # TODO
+            self.__landmarks_3d: List[np.ndarray] = landmarks_3d
+
+        # PROPERTIES
+
+        @property
+        def landmarks_3d(self) -> List[np.ndarray]:
+            # TODO
+            return self.__landmarks_3d
 
     # CONSTRUCTOR
 
     def __init__(self, *, image_size: Tuple[int, int], intrinsics: Tuple[float, float, float, float]):
         # TODO: Comment here.
+        self.__intrinsics: Tuple[float, float, float, float] = intrinsics
         fx, fy, cx, cy = intrinsics
 
         # TODO: Comment here.
@@ -33,7 +47,10 @@ class ObjectDetector3D:
 
     # PUBLIC METHODS
 
-    def detect_objects(self, image: np.ndarray) -> List[Object3D]:
+    def detect_objects(self, image: np.ndarray, world_from_camera: np.ndarray) -> List[Object3D]:
+        # TODO
+        objects: List[ObjectDetector3D.Object3D] = []
+
         # TODO: Comment here.
         results = self.__objectron.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
 
@@ -50,8 +67,19 @@ class ObjectDetector3D:
                     annotated_image, detected_object.rotation, detected_object.translation
                 )
 
+                landmarks_3d: List[np.ndarray] = []
+                from scipy.spatial.transform import Rotation as R
+                m: np.ndarray = np.eye(4)
+                m[0:3, 0:3] = R.from_rotvec(np.array([1, 0, 0]) * np.pi).as_matrix()
+                for landmark_3d in detected_object.landmarks_3d.landmark:
+                    landmarks_3d.append(GeometryUtil.apply_rigid_transform(
+                        world_from_camera @ m, np.array([landmark_3d.x, landmark_3d.y, landmark_3d.z])
+                    ))
+
+                objects.append(ObjectDetector3D.Object3D(landmarks_3d))
+
         cv2.imshow("Annotated Image", cv2.resize(annotated_image, (640, 480)))
-        cv2.waitKey()
+        cv2.waitKey(1)
 
         # TODO
-        return []
+        return objects
