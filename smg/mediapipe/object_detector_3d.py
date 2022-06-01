@@ -76,17 +76,33 @@ class ObjectDetector3D:
                 for landmark_3d in detected_object.landmarks_3d.landmark:
                     camera_landmark_3d: np.ndarray = np.array([landmark_3d.x, landmark_3d.y, landmark_3d.z])
                     camera_landmarks_3d.append(camera_landmark_3d)
+                    landmarks_3d.append(
+                        GeometryUtil.apply_rigid_transform(world_from_camera, camera_landmark_3d)
+                    )
 
-                scale: Optional[float] = ObjectDetector3D.__calculate_scale(camera_landmarks_3d[1], world_from_camera)
-                # print(f"Scale: {scale}")
+                from smg.rigging.cameras import SimpleCamera
+                from smg.rigging.helpers import CameraPoseConverter
+                cam: SimpleCamera = CameraPoseConverter.pose_to_camera(np.linalg.inv(world_from_camera))
+                for i in [1, 2, 5, 6]:
+                    landmarks_3d[i] = GeometryUtil.find_plane_intersection(
+                        cam.p(), landmarks_3d[i] - cam.p(), (0, -1, 0, 0)
+                    )
+                    landmarks_3d[i + 2] = landmarks_3d[i] + np.array([0, -1, 0])
 
-                if scale is not None:
-                    for camera_landmark_3d in camera_landmarks_3d:
-                        landmarks_3d.append(
-                            GeometryUtil.apply_rigid_transform(world_from_camera, scale * camera_landmark_3d)
-                        )
+                landmarks_3d[0] = (landmarks_3d[1] + landmarks_3d[2] + landmarks_3d[5] + landmarks_3d[6]) / 4 + np.array([0, -0.5, 0])
 
-                    objects.append(ObjectDetector3D.Object3D(landmarks_3d))
+                objects.append(ObjectDetector3D.Object3D(landmarks_3d))
+
+                # scale: Optional[float] = ObjectDetector3D.__calculate_scale(camera_landmarks_3d[1], world_from_camera)
+                # # print(f"Scale: {scale}")
+                #
+                # if scale is not None:
+                #     for camera_landmark_3d in camera_landmarks_3d:
+                #         landmarks_3d.append(
+                #             GeometryUtil.apply_rigid_transform(world_from_camera, scale * camera_landmark_3d)
+                #         )
+                #
+                #     objects.append(ObjectDetector3D.Object3D(landmarks_3d))
 
         cv2.imshow("Annotated Image", cv2.resize(annotated_image, (640, 480)))
         cv2.waitKey(1)
