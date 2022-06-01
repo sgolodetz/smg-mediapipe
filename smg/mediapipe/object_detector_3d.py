@@ -90,7 +90,14 @@ class ObjectDetector3D:
 
                 landmarks_3d[0] = (landmarks_3d[1] + landmarks_3d[2] + landmarks_3d[5] + landmarks_3d[6]) / 4 + np.array([0, -0.5, 0])
 
-                objects.append(ObjectDetector3D.Object3D(landmarks_3d))
+                v1: np.ndarray = landmarks_3d[2] - landmarks_3d[1]
+                v2: np.ndarray = landmarks_3d[5] - landmarks_3d[1]
+                v3: np.ndarray = landmarks_3d[2] - landmarks_3d[6]
+                v4: np.ndarray = landmarks_3d[5] - landmarks_3d[6]
+                angle1: float = np.arccos(np.clip(np.dot(v1, v2), -1.0, 1.0)) * 180 / np.pi
+                angle2: float = np.arccos(np.clip(np.dot(v3, v4), -1.0, 1.0)) * 180 / np.pi
+                if np.fabs(angle1 - 90) <= 2.0 and np.fabs(angle2 - 90) <= 2.0:
+                    objects.append(ObjectDetector3D.Object3D(landmarks_3d))
 
         cv2.imshow("Annotated Image", cv2.resize(annotated_image, (640, 480)))
         cv2.waitKey(1)
