@@ -3,9 +3,10 @@ import mediapipe as mp
 import numpy as np
 
 from scipy.spatial.transform import Rotation as R
-from timeit import default_timer as timer
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
+from smg.rigging.cameras import SimpleCamera
+from smg.rigging.helpers import CameraPoseConverter
 from smg.utility import GeometryUtil
 
 
@@ -80,8 +81,6 @@ class ObjectDetector3D:
                         GeometryUtil.apply_rigid_transform(world_from_camera, camera_landmark_3d)
                     )
 
-                from smg.rigging.cameras import SimpleCamera
-                from smg.rigging.helpers import CameraPoseConverter
                 cam: SimpleCamera = CameraPoseConverter.pose_to_camera(np.linalg.inv(world_from_camera))
                 for i in [1, 2, 5, 6]:
                     landmarks_3d[i] = GeometryUtil.find_plane_intersection(
@@ -93,44 +92,8 @@ class ObjectDetector3D:
 
                 objects.append(ObjectDetector3D.Object3D(landmarks_3d))
 
-                # scale: Optional[float] = ObjectDetector3D.__calculate_scale(camera_landmarks_3d[1], world_from_camera)
-                # # print(f"Scale: {scale}")
-                #
-                # if scale is not None:
-                #     for camera_landmark_3d in camera_landmarks_3d:
-                #         landmarks_3d.append(
-                #             GeometryUtil.apply_rigid_transform(world_from_camera, scale * camera_landmark_3d)
-                #         )
-                #
-                #     objects.append(ObjectDetector3D.Object3D(landmarks_3d))
-
         cv2.imshow("Annotated Image", cv2.resize(annotated_image, (640, 480)))
         cv2.waitKey(1)
 
         # TODO
         return objects
-
-    # PRIVATE STATIC METHODS
-
-    @staticmethod
-    def __calculate_scale(ground_landmark: np.ndarray, world_from_camera: np.ndarray) -> Optional[float]:
-        start = timer()
-
-        alpha: float = 1.5
-        last_err: Optional[float] = None
-        scale: float = 1.0
-        transformed_ground_landmark: np.ndarray = GeometryUtil.apply_rigid_transform(world_from_camera, ground_landmark)
-        while np.fabs(transformed_ground_landmark[1]) > 0.01:
-            err: float = transformed_ground_landmark[1]
-            if last_err is not None and np.fabs(err) > np.fabs(last_err):
-                return None
-            else:
-                last_err = err
-            # print(scale, err)
-            scale -= alpha * err
-            transformed_ground_landmark = GeometryUtil.apply_rigid_transform(world_from_camera, scale * ground_landmark)
-
-        end = timer()
-        # print(f"{end - start}s")
-
-        return scale
