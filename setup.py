@@ -15,7 +15,8 @@ setup(
     packages=find_packages(include=["smg.mediapipe", "smg.mediapipe.*"]),
     include_package_data=True,
     install_requires=[
-        "mediapipe"
+        "mediapipe",
+        "smg-open3d"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

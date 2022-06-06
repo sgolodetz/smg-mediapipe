@@ -1,9 +1,11 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+import open3d as o3d
 
 from typing import List, Optional, Tuple
 
+from smg.open3d import VisualisationUtil
 from smg.rigging.cameras import SimpleCamera
 from smg.rigging.helpers import CameraPoseConverter
 from smg.utility import GeometryUtil
@@ -41,6 +43,36 @@ class ChairDetector3D:
             :return:    The 3D landmarks associated with the detected chair.
             """
             return self.__landmarks_3d
+
+        # PUBLIC METHODS
+
+        def make_o3d_geometries(self, *, corner_colours: List[Tuple[float, float, float]],
+                                edge_colour: Tuple[float, float, float]) -> List[o3d.geometry.Geometry]:
+            """
+            Make the Open3D geometries needed to visualise the detected chair's bounding box.
+
+            :param corner_colours:  The colours to assign to the corners of the bounding box.
+            :param edge_colour:     The colour to assign to the edges of the bounding box.
+            :return:                The Open3D geometries needed to visualise the bounding box.
+            """
+            geometries: List[o3d.geometry.Geometry] = []
+
+            # Add a sphere for each corner of the bounding box.
+            for i, landmark_3d in enumerate(self.__landmarks_3d):
+                geometries.append(VisualisationUtil.make_sphere(landmark_3d, 0.01, colour=corner_colours[i]))
+
+            # Add the edges of the bounding box.
+            edge_indices: np.ndarray = np.array([
+                [1, 2], [1, 3], [1, 5], [2, 4], [2, 6], [3, 4], [3, 7], [4, 8], [5, 6], [5, 7], [6, 8], [7, 8]
+            ])
+            edges: o3d.geometry.LineSet = o3d.geometry.LineSet(
+                points=o3d.utility.Vector3dVector(self.__landmarks_3d),
+                lines=o3d.utility.Vector2iVector(edge_indices),
+            )
+            edges.colors = o3d.utility.Vector3dVector([edge_colour for _ in range(len(edge_indices))])
+            geometries.append(edges)
+
+            return geometries
 
     # CONSTRUCTOR
 
