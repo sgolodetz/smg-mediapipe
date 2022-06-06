@@ -46,7 +46,7 @@ class ChairDetector3D:
 
     def __init__(
         self, *, debug: bool = False, image_size: Tuple[int, int], intrinsics: Tuple[float, float, float, float],
-        min_detection_confidence: float = 0.6, static_image_mode: bool = True
+        min_detection_confidence: float = 0.5, static_image_mode: bool = True
     ):
         """
         Construct a 3D chair detector based on MediaPipe Objectron for chairs sitting on the ground.
