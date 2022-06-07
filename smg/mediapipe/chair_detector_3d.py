@@ -111,7 +111,7 @@ class ChairDetector3D:
         Try to detect any 3D chairs in the specified image.
 
         :param image:               The specified image (assumed to be in BGR format, as per OpenCV).
-        :param world_from_camera:   The camera pose.
+        :param world_from_camera:   The camera pose, as a transformation from camera space to world space.
         :param angle_threshold:     The maximum angle (in degrees) by which the corner angles at the base of the
                                     bounding box for a detected chair are allowed to deviate from 90 degrees. We
                                     use this to suppress Objectron detections that are too far from being cuboids.
