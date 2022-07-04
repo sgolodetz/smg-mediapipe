@@ -8,7 +8,7 @@ setup(
     version="0.0.1",
     author="Stuart Golodetz",
     author_email="stuart.golodetz@cs.ox.ac.uk",
-    description="Wrapper for MediaPipe",
+    description="Wrapper for MediaPipe functionality",
     long_description="",  #long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/sgolodetz/smg-mediapipe",
